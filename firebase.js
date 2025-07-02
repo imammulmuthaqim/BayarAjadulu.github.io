@@ -28,12 +28,12 @@ import {
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "bayaraja-demo.firebaseapp.com",
-  projectId: "bayaraja-demo",
-  storageBucket: "bayaraja-demo.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
+    apiKey: "AIzaSyBv31cJC19G5Aoa5LTgaeXRdpN84z5TKsY",
+    authDomain: "imammulmu322.firebaseapp.com",
+    projectId: "imammulmu322",
+    storageBucket: "imammulmu322.firebasestorage.app",
+    messagingSenderId: "1048023716189",
+    appId: "1:1048023716189:web:e467f867fdd91c4ed518b4"
 };
 
 // Initialize Firebase
