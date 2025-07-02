@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan QR - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="window.location.href='main.html'" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; cursor: pointer;">
+                        ←
+                    </button>
+                    <div>
+                        <div class="greeting">Scan QR Code</div>
+                        <div class="user-name">Bayar dengan memindai QR code</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Current Balance -->
+            <div class="card balance-card">
+                <div class="balance-label">Saldo Anda</div>
+                <div class="balance-amount" id="currentBalance">Rp 0</div>
+            </div>
+
+            <!-- QR Scanner -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Pindai QR Code</h3>
+                
+                <div id="scannerContainer">
+                    <div class="qr-scanner">
+                        <video id="qrVideo" class="qr-video" autoplay muted playsinline></video>
+                        <div class="qr-overlay">
+                            <div class="qr-frame"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn btn-primary" id="startScanBtn">📱 Mulai Scan</button>
+                        <button class="btn btn-secondary" id="stopScanBtn" style="display: none;">⏹️ Berhenti</button>
+                    </div>
+                </div>
+
+                <div id="scanResult" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <div style="font-size: 3rem; color: var(--success-color);">✅</div>
+                        <h4>QR Code Berhasil Dipindai!</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Input Alternative -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Atau Masukkan Kode Manual</h3>
+                <div class="form-group">
+                    <label class="form-label" for="manualCode">Kode QR</label>
+                    <textarea id="manualCode" class="form-input" rows="3" placeholder="Tempel kode QR di sini..."></textarea>
+                    <div class="form-error" id="codeError"></div>
+                </div>
+                <button class="btn btn-secondary btn-full" id="processManualBtn">🔍 Proses Kode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Confirmation Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Konfirmasi Pembayaran</h3>
+                <button class="modal-close" onclick="hidePaymentModal()">&times;</button>
+            </div>
+            <div>
+                <!-- Recipient Info -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="width: 64px; height: 64px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; margin: 0 auto 1rem;">
+                        👤
+                    </div>
+                    <h4 id="paymentRecipientName">-</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;" id="paymentRecipientUid">-</p>
+                </div>
+
+                <!-- Amount Input -->
+                <div class="form-group" id="amountInputGroup">
+                    <label class="form-label" for="paymentAmount">Nominal Pembayaran</label>
+                    <input type="number" id="paymentAmount" class="form-input" placeholder="Masukkan nominal" min="1000">
+                    <div class="form-error" id="paymentAmountError"></div>
+                </div>
+
+                <!-- Fixed Amount Display -->
+                <div id="fixedAmountGroup" style="display: none;">
+                    <div style="text-align: center; margin: 1rem 0;">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Nominal Pembayaran</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: var(--primary-color);" id="fixedAmount">Rp 0</div>
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div class="form-group">
+                    <label class="form-label" for="paymentNote">Catatan (Opsional)</label>
+                    <input type="text" id="paymentNote" class="form-input" placeholder="Tambahkan catatan" maxlength="100">
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="hidePaymentModal()">Batal</button>
+                    <button class="btn btn-primary" style="flex: 1;" id="confirmPaymentBtn">💸 Bayar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        class ScanQRPage {
+            constructor() {
+                this.html5QrCode = null;
+                this.isScanning = false;
+                this.qrData = null;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    this.setupEventListeners();
+                    this.updateBalance();
+                    
+                } catch (error) {
+                    console.error('Scan QR page initialization error:', error);
+                    Utils.showToast('Gagal memuat halaman scan QR', 'error');
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('startScanBtn').addEventListener('click', this.startScanning.bind(this));
+                document.getElementById('stopScanBtn').addEventListener('click', this.stopScanning.bind(this));
+                document.getElementById('processManualBtn').addEventListener('click', this.processManualCode.bind(this));
+                document.getElementById('confirmPaymentBtn').addEventListener('click', this.processPayment.bind(this));
+                
+                // Real-time validation for payment amount
+                document.getElementById('paymentAmount').addEventListener('input', this.validatePaymentAmount.bind(this));
+            }
+
+            updateBalance() {
+                const currentBalance = bayarAjaApp.userWallet?.balance || 0;
+                document.getElementById('currentBalance').textContent = Utils.formatCurrency(currentBalance);
+            }
+
+            async startScanning() {
+                try {
+                    const startBtn = document.getElementById('startScanBtn');
+                    const stopBtn = document.getElementById('stopScanBtn');
+                    
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-flex';
+
+                    this.html5QrCode = new Html5Qrcode("qrVideo");
+                    
+                    const config = {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0
+                    };
+
+                    await this.html5QrCode.start(
+                        { facingMode: "environment" },
+                        config,
+                        this.onScanSuccess.bind(this),
+                        this.onScanFailure.bind(this)
+                    );
+
+                    this.isScanning = true;
+                    Utils.showToast('Arahkan kamera ke QR code', 'info');
+
+                } catch (error) {
+                    console.error('Error starting QR scanner:', error);
+                    Utils.showToast('Gagal mengakses kamera. Pastikan izin kamera telah diberikan.', 'error');
+                    this.resetScannerUI();
+                }
+            }
+
+            async stopScanning() {
+                if (this.html5QrCode && this.isScanning) {
+                    try {
+                        await this.html5QrCode.stop();
+                        this.html5QrCode.clear();
+                    } catch (error) {
+                        console.error('Error stopping scanner:', error);
+                    }
+                }
+                
+                this.isScanning = false;
+                this.resetScannerUI();
+            }
+
+            resetScannerUI() {
+                document.getElementById('startScanBtn').style.display = 'inline-flex';
+                document.getElementById('stopScanBtn').style.display = 'none';
+                document.getElementById('scanResult').style.display = 'none';
+            }
+
+            onScanSuccess(decodedText, decodedResult) {
+                console.log('QR Code scanned:', decodedText);
+                this.processQRCode(decodedText);
+            }
+
+            onScanFailure(error) {
+                // Ignore scan failures (normal when no QR code is detected)
+            }
+
+            processManualCode() {
+                const code = document.getElementById('manualCode').value.trim();
+                const errorElement = document.getElementById('codeError');
+                
+                if (!code) {
+                    errorElement.textContent = 'Masukkan kode QR';
+                    return;
+                }
+
+                errorElement.textContent = '';
+                this.processQRCode(code);
+            }
+
+            async processQRCode(qrString) {
+                try {
+                    // Parse QR data
+                    this.qrData = Utils.parseQRData(qrString);
+                    
+                    // Stop scanning
+                    if (this.isScanning) {
+                        await this.stopScanning();
+                    }
+
+                    // Show scan result
+                    document.getElementById('scanResult').style.display = 'block';
+                    
+                    // Show payment modal
+                    this.showPaymentModal();
+                    
+                } catch (error) {
+                    console.error('Error processing QR code:', error);
+                    Utils.showToast(error.message || 'QR code tidak valid', 'error');
+                }
+            }
+
+            showPaymentModal() {
+                const modal = document.getElementById('paymentModal');
+                const { recipientUid, recipientName, amount, isEditable } = this.qrData;
+
+                // Set recipient info
+                document.getElementById('paymentRecipientName').textContent = recipientName;
+                document.getElementById('paymentRecipientUid').textContent = `UID: ${recipientUid}`;
+
+                // Handle amount input/display
+                const amountInputGroup = document.getElementById('amountInputGroup');
+                const fixedAmountGroup = document.getElementById('fixedAmountGroup');
+                const paymentAmountInput = document.getElementById('paymentAmount');
+
+                if (amount && !isEditable) {
+                    // Fixed amount
+                    amountInputGroup.style.display = 'none';
+                    fixedAmountGroup.style.display = 'block';
+                    document.getElementById('fixedAmount').textContent = Utils.formatCurrency(amount);
+                } else {
+                    // Editable amount
+                    amountInputGroup.style.display = 'block';
+                    fixedAmountGroup.style.display = 'none';
+                    
+                    if (amount) {
+                        paymentAmountInput.value = amount;
+                    }
+                }
+
+                // Clear note
+                document.getElementById('paymentNote').value = '';
+                
+                // Validate and show modal
+                this.validatePaymentAmount();
+                modal.classList.add('show');
+            }
+
+            validatePaymentAmount() {
+                const amountInput = document.getElementById('paymentAmount');
+                const errorElement = document.getElementById('paymentAmountError');
+                const confirmBtn = document.getElementById('confirmPaymentBtn');
+                
+                let amount;
+                
+                if (this.qrData.amount && !this.qrData.isEditable) {
+                    // Fixed amount
+                    amount = this.qrData.amount;
+                } else {
+                    // User input amount
+                    amount = parseInt(amountInput.value) || 0;
+                }
+
+                let isValid = true;
+
+                if (amount < 1000) {
+                    errorElement.textContent = 'Minimal pembayaran Rp 1.000';
+                    isValid = false;
+                } else if (amount > 10000000) {
+                    errorElement.textContent = 'Maksimal pembayaran Rp 10.000.000';
+                    isValid = false;
+                } else if (amount > (bayarAjaApp.userWallet?.balance || 0)) {
+                    errorElement.textContent = 'Saldo tidak mencukupi';
+                    isValid = false;
+                } else {
+                    errorElement.textContent = '';
+                }
+
+                confirmBtn.disabled = !isValid;
+            }
+
+            async processPayment() {
+                const confirmBtn = document.getElementById('confirmPaymentBtn');
+                const note = document.getElementById('paymentNote').value.trim();
+                
+                let amount;
+                if (this.qrData.amount && !this.qrData.isEditable) {
+                    amount = this.qrData.amount;
+                } else {
+                    amount = parseInt(document.getElementById('paymentAmount').value);
+                }
+
+                try {
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+
+                    await bayarAjaApp.transferMoney(this.qrData.recipientUid, amount, note);
+                    
+                    hidePaymentModal();
+                    Utils.showToast(`Pembayaran berhasil ke ${this.qrData.recipientName}`, 'success');
+                    
+                    // Redirect to main page
+                    setTimeout(() => {
+                        window.location.href = 'main.html';
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    Utils.showToast(error.message || 'Pembayaran gagal', 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '💸 Bayar';
+                }
+            }
+        }
+
+        function hidePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('show');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            new ScanQRPage();
+        });
+    </script>
+</body>
+</html>

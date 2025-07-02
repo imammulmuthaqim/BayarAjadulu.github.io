@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="greeting-section">
+                    <div class="greeting" id="greeting">Selamat Pagi</div>
+                    <div class="user-name" id="userName">Loading...</div>
+                </div>
+                <button class="notification-btn" id="notificationBtn">
+                    🔔
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Balance Card -->
+            <div class="card balance-card">
+                <div class="balance-header">
+                    <div class="balance-label">Saldo Anda</div>
+                    <button class="btn btn-topup" onclick="window.location.href='topup.html'">
+                        💳 Top Up
+                    </button>
+                </div>
+                <div class="balance-amount" id="balanceAmount">Rp 0</div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="showQRCode()">
+                        📱 QR Saya
+                    </button>
+                </div>
+            </div>
+
+            <!-- Monthly Summary -->
+            <div class="card summary-card">
+                <div class="balance-label">Pengeluaran Bulan Ini</div>
+                <div class="summary-amount" id="monthlyExpenses">Rp 0</div>
+            </div>
+
+            <!-- Feature Menu -->
+            <div class="feature-menu">
+                <a href="topup.html" class="feature-item">
+                    <div class="feature-icon">💳</div>
+                    <div class="feature-title">Top Up</div>
+                    <div class="feature-desc">Isi saldo</div>
+                </a>
+                
+                <a href="transfer.html" class="feature-item">
+                    <div class="feature-icon">💸</div>
+                    <div class="feature-title">Transfer</div>
+                    <div class="feature-desc">Kirim uang</div>
+                </a>
+                
+                <a href="scanqr.html" class="feature-item">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">Scan QR</div>
+                    <div class="feature-desc">Bayar dengan QR</div>
+                </a>
+                
+                <a href="history.html" class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Riwayat</div>
+                    <div class="feature-desc">Transaksi</div>
+                </a>
+                
+                <a href="pembelian.html" class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">Token Listrik</div>
+                    <div class="feature-desc">PLN</div>
+                </a>
+                
+                <a href="pembelian.html?tab=pulsa" class="feature-item">
+                    <div class="feature-icon">📞</div>
+                    <div class="feature-title">Pulsa/Data</div>
+                    <div class="feature-desc">Isi ulang</div>
+                </a>
+                
+                <a href="#" class="feature-item" onclick="Utils.showToast('Fitur promo segera hadir!', 'info')">
+                    <div class="feature-icon">🎁</div>
+                    <div class="feature-title">Promo</div>
+                    <div class="feature-desc">Penawaran</div>
+                </a>
+                
+                <a href="settings.html" class="feature-item">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-title">Pengaturan</div>
+                    <div class="feature-desc">Akun</div>
+                </a>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Transaksi Terbaru</h3>
+                    <a href="history.html" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">Lihat Semua</a>
+                </div>
+                <div id="recentTransactions">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">QR Code Saya</h3>
+                <button class="modal-close" onclick="hideQRCode()">&times;</button>
+            </div>
+            <div style="text-align: center;">
+                <div id="qrCodeContainer" style="margin: 1rem 0;"></div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    Tunjukkan QR code ini untuk menerima pembayaran
+                </p>
+                <button class="btn btn-secondary btn-full mt-2" onclick="copyQRData()">
+                    📋 Salin Data QR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        class MainDashboard {
+            constructor() {
+                this.currentUser = null;
+                this.userWallet = null;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    this.currentUser = await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    // Load dashboard data
+                    await this.loadDashboardData();
+                    this.setupEventListeners();
+                    
+                } catch (error) {
+                    console.error('Dashboard initialization error:', error);
+                    Utils.showToast('Gagal memuat dashboard', 'error');
+                }
+            }
+
+            async loadDashboardData() {
+                // Set greeting and user name
+                document.getElementById('greeting').textContent = Utils.getGreeting();
+                document.getElementById('userName').textContent = bayarAjaApp.userData?.name || this.currentUser.displayName || 'Pengguna';
+
+                // Load monthly expenses
+                const monthlyExpenses = await bayarAjaApp.getMonthlyExpenses();
+                document.getElementById('monthlyExpenses').textContent = Utils.formatCurrency(monthlyExpenses);
+
+                // Load recent transactions
+                this.loadRecentTransactions();
+            }
+
+            async loadRecentTransactions() {
+                try {
+                    const transactions = await bayarAjaApp.getTransactions(5);
+                    this.displayRecentTransactions(transactions);
+                } catch (error) {
+                    console.error('Error loading recent transactions:', error);
+                    document.getElementById('recentTransactions').innerHTML = 
+                        '<p style="text-align: center; color: var(--text-secondary);">Gagal memuat transaksi</p>';
+                }
+            }
+
+            displayRecentTransactions(transactions) {
+                const container = document.getElementById('recentTransactions');
+                
+                if (transactions.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Belum ada transaksi</p>';
+                    return;
+                }
+
+                const transactionHTML = transactions.map(transaction => {
+                    const isIncome = ['TRANSFER_IN', 'TOP_UP'].includes(transaction.type);
+                    const iconClass = this.getTransactionIcon(transaction.type);
+                    const amount = isIncome ? `+${Utils.formatCurrency(transaction.amount)}` : `-${Utils.formatCurrency(transaction.amount)}`;
+                    const amountClass = isIncome ? 'positive' : 'negative';
+                    
+                    return `
+                        <div class="transaction-item">
+                            <div class="transaction-icon ${iconClass}">
+                                ${this.getTransactionEmoji(transaction.type)}
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">${this.getTransactionTitle(transaction)}</div>
+                                <div class="transaction-desc">${this.getTransactionDesc(transaction)}</div>
+                            </div>
+                            <div class="transaction-amount ${amountClass}">${amount}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = transactionHTML;
+            }
+
+            getTransactionIcon(type) {
+                const iconMap = {
+                    'TRANSFER_IN': 'income',
+                    'TRANSFER_OUT': 'expense',
+                    'TOP_UP': 'topup',
+                    'PURCHASE': 'expense'
+                };
+                return iconMap[type] || 'expense';
+            }
+
+            getTransactionEmoji(type) {
+                const emojiMap = {
+                    'TRANSFER_IN': '📥',
+                    'TRANSFER_OUT': '📤',
+                    'TOP_UP': '💳',
+                    'PURCHASE': '🛒'
+                };
+                return emojiMap[type] || '💰';
+            }
+
+            getTransactionTitle(transaction) {
+                switch (transaction.type) {
+                    case 'TRANSFER_IN':
+                        return `Transfer dari ${transaction.senderName}`;
+                    case 'TRANSFER_OUT':
+                        return `Transfer ke ${transaction.recipientName}`;
+                    case 'TOP_UP':
+                        return 'Top Up Saldo';
+                    case 'PURCHASE':
+                        return `Pembelian ${transaction.subType || 'Digital'}`;
+                    default:
+                        return 'Transaksi';
+                }
+            }
+
+            getTransactionDesc(transaction) {
+                if (transaction.createdAt) {
+                    const date = transaction.createdAt.toDate ? transaction.createdAt.toDate() : new Date(transaction.createdAt);
+                    return Utils.formatDate(date);
+                }
+                return 'Baru saja';
+            }
+
+            setupEventListeners() {
+                document.getElementById('notificationBtn').addEventListener('click', () => {
+                    Utils.showToast('Tidak ada notifikasi baru', 'info');
+                });
+            }
+        }
+
+        // QR Code functions
+        async function showQRCode() {
+            const modal = document.getElementById('qrModal');
+            const container = document.getElementById('qrCodeContainer');
+            
+            try {
+                const user = firebase.auth.currentUser;
+                const userData = bayarAjaApp.userData;
+                
+                const qrData = Utils.generateQRData(user.uid, userData?.name || user.displayName || 'Pengguna');
+                
+                // Clear previous QR code
+                container.innerHTML = '';
+                
+                // Generate QR code
+                await QRCode.toCanvas(container, qrData, {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                });
+                
+                modal.classList.add('show');
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                Utils.showToast('Gagal membuat QR code', 'error');
+            }
+        }
+
+        function hideQRCode() {
+            document.getElementById('qrModal').classList.remove('show');
+        }
+
+        async function copyQRData() {
+            try {
+                const user = firebase.auth.currentUser;
+                const userData = bayarAjaApp.userData;
+                const qrData = Utils.generateQRData(user.uid, userData?.name || user.displayName || 'Pengguna');
+                await Utils.copyToClipboard(qrData);
+            } catch (error) {
+                Utils.showToast('Gagal menyalin data QR', 'error');
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            new MainDashboard();
+        });
+    </script>
+</body>
+</html>

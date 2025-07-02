@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembelian Digital - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="window.location.href='main.html'" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; cursor: pointer;">
+                        ←
+                    </button>
+                    <div>
+                        <div class="greeting">Pembelian Digital</div>
+                        <div class="user-name">Token listrik, pulsa, dan paket data</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Current Balance -->
+            <div class="card balance-card">
+                <div class="balance-label">Saldo Anda</div>
+                <div class="balance-amount" id="currentBalance">Rp 0</div>
+            </div>
+
+            <!-- Product Tabs -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" data-tab="electricity">⚡ Token Listrik</button>
+                    <button class="tab" data-tab="pulsa">📞 Pulsa & Data</button>
+                </div>
+
+                <!-- Electricity Tab -->
+                <div class="tab-content active" id="electricity">
+                    <h3 style="margin-bottom: 1rem;">Token Listrik PLN</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="meterNumber">Nomor Meter / ID Pelanggan</label>
+                        <input type="text" id="meterNumber" class="form-input" placeholder="Masukkan nomor meter PLN" maxlength="12">
+                        <div class="form-error" id="meterError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Nominal</label>
+                        <div class="amount-grid">
+                            <button class="amount-btn" data-amount="20000" data-type="electricity">Rp 20.000</button>
+                            <button class="amount-btn" data-amount="50000" data-type="electricity">Rp 50.000</button>
+                            <button class="amount-btn" data-amount="100000" data-type="electricity">Rp 100.000</button>
+                            <button class="amount-btn" data-amount="200000" data-type="electricity">Rp 200.000</button>
+                            <button class="amount-btn" data-amount="500000" data-type="electricity">Rp 500.000</button>
+                            <button class="amount-btn" data-amount="1000000" data-type="electricity">Rp 1.000.000</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="margin-bottom: 0.5rem;">Ringkasan Pembelian</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Produk:</span>
+                            <span>Token Listrik PLN</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Nominal:</span>
+                            <span id="electricityAmount">Rp 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Biaya Admin:</span>
+                            <span style="color: var(--success-color);">GRATIS</span>
+                        </div>
+                        <hr style="margin: 0.5rem 0;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                            <span>Total Bayar:</span>
+                            <span id="electricityTotal">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full mt-3" id="buyElectricityBtn" disabled>
+                        ⚡ Beli Token Listrik
+                    </button>
+                </div>
+
+                <!-- Pulsa Tab -->
+                <div class="tab-content" id="pulsa">
+                    <h3 style="margin-bottom: 1rem;">Pulsa & Paket Data</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="phoneNumber">Nomor HP</label>
+                        <input type="tel" id="phoneNumber" class="form-input" placeholder="08xxxxxxxxxx" maxlength="13">
+                        <div class="form-error" id="phoneError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pilih Operator</label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <button class="operator-btn" data-operator="telkomsel">
+                                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
+                                <div>Telkomsel</div>
+                            </button>
+                            <button class="operator-btn" data-operator="indosat">
+                                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
+                                <div>Indosat</div>
+                            </button>
+                            <button class="operator-btn" data-operator="xl">
+                                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
+                                <div>XL</div>
+                            </button>
+                            <button class="operator-btn" data-operator="tri">
+                                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
+                                <div>3 (Tri)</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Jenis Produk</label>
+                        <div class="tabs" style="margin-bottom: 1rem;">
+                            <button class="tab active" data-product="pulsa">Pulsa</button>
+                            <button class="tab" data-product="data">Paket Data</button>
+                        </div>
+                    </div>
+
+                    <!-- Pulsa Products -->
+                    <div class="product-content active" id="pulsa-products">
+                        <div class="amount-grid">
+                            <button class="amount-btn" data-amount="5000" data-type="pulsa">Rp 5.000</button>
+                            <button class="amount-btn" data-amount="10000" data-type="pulsa">Rp 10.000</button>
+                            <button class="amount-btn" data-amount="25000" data-type="pulsa">Rp 25.000</button>
+                            <button class="amount-btn" data-amount="50000" data-type="pulsa">Rp 50.000</button>
+                            <button class="amount-btn" data-amount="100000" data-type="pulsa">Rp 100.000</button>
+                            <button class="amount-btn" data-amount="200000" data-type="pulsa">Rp 200.000</button>
+                        </div>
+                    </div>
+
+                    <!-- Data Products -->
+                    <div class="product-content" id="data-products">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+                            <button class="data-package-btn" data-amount="15000" data-type="data" data-desc="1GB, 30 hari">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 500;">Paket Data 1GB</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Masa aktif 30 hari</div>
+                                    </div>
+                                    <div style="font-weight: bold; color: var(--primary-color);">Rp 15.000</div>
+                                </div>
+                            </button>
+                            <button class="data-package-btn" data-amount="25000" data-type="data" data-desc="3GB, 30 hari">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 500;">Paket Data 3GB</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Masa aktif 30 hari</div>
+                                    </div>
+                                    <div style="font-weight: bold; color: var(--primary-color);">Rp 25.000</div>
+                                </div>
+                            </button>
+                            <button class="data-package-btn" data-amount="50000" data-type="data" data-desc="8GB, 30 hari">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 500;">Paket Data 8GB</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Masa aktif 30 hari</div>
+                                    </div>
+                                    <div style="font-weight: bold; color: var(--primary-color);">Rp 50.000</div>
+                                </div>
+                            </button>
+                            <button class="data-package-btn" data-amount="100000" data-type="data" data-desc="20GB, 30 hari">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 500;">Paket Data 20GB</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Masa aktif 30 hari</div>
+                                    </div>
+                                    <div style="font-weight: bold; color: var(--primary-color);">Rp 100.000</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="margin-bottom: 0.5rem;">Ringkasan Pembelian</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Produk:</span>
+                            <span id="pulsaProduct">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Operator:</span>
+                            <span id="selectedOperator">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Nominal:</span>
+                            <span id="pulsaAmount">Rp 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Biaya Admin:</span>
+                            <span style="color: var(--success-color);">GRATIS</span>
+                        </div>
+                        <hr style="margin: 0.5rem 0;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                            <span>Total Bayar:</span>
+                            <span id="pulsaTotal">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full mt-3" id="buyPulsaBtn" disabled>
+                        📞 Beli Pulsa/Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Pembelian Berhasil!</h3>
+                <button class="modal-close" onclick="hideSuccessModal()">&times;</button>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;">✅</div>
+                <h4 id="successTitle">Pembelian Berhasil</h4>
+                <p id="successMessage" style="margin: 1rem 0;"></p>
+                
+                <!-- Token Display (for electricity) -->
+                <div id="tokenDisplay" style="display: none; margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-weight: 500; margin-bottom: 0.5rem;">Token Listrik:</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color); letter-spacing: 2px;" id="tokenNumber">-</div>
+                    <button class="btn btn-secondary mt-2" onclick="copyToken()">📋 Salin Token</button>
+                </div>
+
+                <button class="btn btn-primary btn-full mt-3" onclick="hideSuccessModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script>
+        class PembelianPage {
+            constructor() {
+                this.selectedAmount = 0;
+                this.selectedType = '';
+                this.selectedOperator = '';
+                this.selectedProduct = 'pulsa';
+                this.currentToken = '';
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    this.setupEventListeners();
+                    this.updateBalance();
+                    this.checkURLParams();
+                    
+                } catch (error) {
+                    console.error('Pembelian page initialization error:', error);
+                    Utils.showToast('Gagal memuat halaman pembelian', 'error');
+                }
+            }
+
+            checkURLParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const tab = urlParams.get('tab');
+                if (tab === 'pulsa') {
+                    this.switchTab('pulsa');
+                }
+            }
+
+            setupEventListeners() {
+                // Main tabs
+                document.querySelectorAll('.tabs .tab[data-tab]').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = tab.dataset.tab;
+                        this.switchTab(tabName);
+                    });
+                });
+
+                // Product tabs (pulsa/data)
+                document.querySelectorAll('.tab[data-product]').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const product = tab.dataset.product;
+                        this.switchProduct(product);
+                    });
+                });
+
+                // Amount buttons
+                document.querySelectorAll('.amount-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const amount = parseInt(btn.dataset.amount);
+                        const type = btn.dataset.type;
+                        this.selectAmount(amount, type);
+                    });
+                });
+
+                // Data package buttons
+                document.querySelectorAll('.data-package-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const amount = parseInt(btn.dataset.amount);
+                        const type = btn.dataset.type;
+                        this.selectAmount(amount, type);
+                    });
+                });
+
+                // Operator buttons
+                document.querySelectorAll('.operator-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const operator = btn.dataset.operator;
+                        this.selectOperator(operator);
+                    });
+                });
+
+                // Form inputs
+                document.getElementById('meterNumber').addEventListener('input', this.validateElectricity.bind(this));
+                document.getElementById('phoneNumber').addEventListener('input', this.validatePulsa.bind(this));
+
+                // Buy buttons
+                document.getElementById('buyElectricityBtn').addEventListener('click', this.buyElectricity.bind(this));
+                document.getElementById('buyPulsaBtn').addEventListener('click', this.buyPulsa.bind(this));
+            }
+
+            updateBalance() {
+                const currentBalance = bayarAjaApp.userWallet?.balance || 0;
+                document.getElementById('currentBalance').textContent = Utils.formatCurrency(currentBalance);
+            }
+
+            switchTab(tabName) {
+                // Update tab buttons
+                document.querySelectorAll('.tabs .tab[data-tab]').forEach(t => t.classList.remove('active'));
+                document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update tab content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
+
+                // Reset selections
+                this.resetSelections();
+            }
+
+            switchProduct(product) {
+                this.selectedProduct = product;
+
+                // Update product tabs
+                document.querySelectorAll('.tab[data-product]').forEach(t => t.classList.remove('active'));
+                document.querySelector(`.tab[data-product="${product}"]`).classList.add('active');
+
+                // Update product content
+                document.querySelectorAll('.product-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(`${product}-products`).classList.add('active');
+
+                // Reset amount selection
+                this.selectedAmount = 0;
+                this.selectedType = '';
+                this.updatePulsaDisplay();
+                this.validatePulsa();
+            }
+
+            selectAmount(amount, type) {
+                this.selectedAmount = amount;
+                this.selectedType = type;
+
+                // Update button states
+                document.querySelectorAll('.amount-btn, .data-package-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                event.target.closest('.amount-btn, .data-package-btn').classList.add('selected');
+
+                // Update displays
+                if (type === 'electricity') {
+                    this.updateElectricityDisplay();
+                    this.validateElectricity();
+                } else {
+                    this.updatePulsaDisplay();
+                    this.validatePulsa();
+                }
+            }
+
+            selectOperator(operator) {
+                this.selectedOperator = operator;
+
+                // Update button states
+                document.querySelectorAll('.operator-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                event.target.closest('.operator-btn').classList.add('selected');
+
+                // Update display
+                this.updatePulsaDisplay();
+                this.validatePulsa();
+            }
+
+            updateElectricityDisplay() {
+                document.getElementById('electricityAmount').textContent = Utils.formatCurrency(this.selectedAmount);
+                document.getElementById('electricityTotal').textContent = Utils.formatCurrency(this.selectedAmount);
+            }
+
+            updatePulsaDisplay() {
+                const operatorNames = {
+                    'telkomsel': 'Telkomsel',
+                    'indosat': 'Indosat',
+                    'xl': 'XL',
+                    'tri': '3 (Tri)'
+                };
+
+                let productName = '-';
+                if (this.selectedType === 'pulsa') {
+                    productName = `Pulsa ${Utils.formatCurrency(this.selectedAmount)}`;
+                } else if (this.selectedType === 'data') {
+                    const selectedBtn = document.querySelector('.data-package-btn.selected');
+                    if (selectedBtn) {
+                        const desc = selectedBtn.dataset.desc;
+                        productName = `Paket Data ${desc}`;
+                    }
+                }
+
+                document.getElementById('pulsaProduct').textContent = productName;
+                document.getElementById('selectedOperator').textContent = operatorNames[this.selectedOperator] || '-';
+                document.getElementById('pulsaAmount').textContent = Utils.formatCurrency(this.selectedAmount);
+                document.getElementById('pulsaTotal').textContent = Utils.formatCurrency(this.selectedAmount);
+            }
+
+            validateElectricity() {
+                const meterNumber = document.getElementById('meterNumber').value.trim();
+                const errorElement = document.getElementById('meterError');
+                const buyBtn = document.getElementById('buyElectricityBtn');
+
+                let isValid = true;
+
+                // Validate meter number
+                if (meterNumber && (meterNumber.length < 8 || meterNumber.length > 12 || !/^\d+$/.test(meterNumber))) {
+                    errorElement.textContent = 'Nomor meter harus 8-12 digit angka';
+                    isValid = false;
+                } else {
+                    errorElement.textContent = '';
+                }
+
+                // Check amount and balance
+                if (this.selectedAmount === 0) {
+                    isValid = false;
+                } else if (this.selectedAmount > (bayarAjaApp.userWallet?.balance || 0)) {
+                    isValid = false;
+                }
+
+                buyBtn.disabled = !isValid || !meterNumber;
+            }
+
+            validatePulsa() {
+                const phoneNumber = document.getElementById('phoneNumber').value.trim();
+                const errorElement = document.getElementById('phoneError');
+                const buyBtn = document.getElementById('buyPulsaBtn');
+
+                let isValid = true;
+
+                // Validate phone number
+                if (phoneNumber && !Utils.isValidPhone(phoneNumber)) {
+                    errorElement.textContent = 'Format nomor HP tidak valid';
+                    isValid = false;
+                } else {
+                    errorElement.textContent = '';
+                }
+
+                // Check other requirements
+                if (this.selectedAmount === 0 || !this.selectedOperator) {
+                    isValid = false;
+                } else if (this.selectedAmount > (bayarAjaApp.userWallet?.balance || 0)) {
+                    isValid = false;
+                }
+
+                buyBtn.disabled = !isValid || !phoneNumber;
+            }
+
+            async buyElectricity() {
+                const meterNumber = document.getElementById('meterNumber').value.trim();
+                const buyBtn = document.getElementById('buyElectricityBtn');
+
+                try {
+                    buyBtn.disabled = true;
+                    buyBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+
+                    const details = { meterNumber };
+                    const result = await bayarAjaApp.purchaseDigitalProduct('ELECTRICITY', details, this.selectedAmount);
+
+                    // Show success modal with token
+                    this.showSuccessModal('Token Listrik', `Token listrik senilai ${Utils.formatCurrency(this.selectedAmount)} berhasil dibeli`, result.token);
+
+                } catch (error) {
+                    console.error('Electricity purchase error:', error);
+                    Utils.showToast(error.message || 'Pembelian token listrik gagal', 'error');
+                } finally {
+                    buyBtn.disabled = false;
+                    buyBtn.innerHTML = '⚡ Beli Token Listrik';
+                }
+            }
+
+            async buyPulsa() {
+                const phoneNumber = document.getElementById('phoneNumber').value.trim();
+                const buyBtn = document.getElementById('buyPulsaBtn');
+
+                try {
+                    buyBtn.disabled = true;
+                    buyBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+
+                    const details = { 
+                        phoneNumber,
+                        operator: this.selectedOperator,
+                        productType: this.selectedProduct
+                    };
+                    
+                    const productType = this.selectedProduct === 'pulsa' ? 'PULSA' : 'DATA';
+                    await bayarAjaApp.purchaseDigitalProduct(productType, details, this.selectedAmount);
+
+                    // Show success modal
+                    const productName = this.selectedProduct === 'pulsa' ? 'Pulsa' : 'Paket Data';
+                    this.showSuccessModal(productName, `${productName} senilai ${Utils.formatCurrency(this.selectedAmount)} berhasil dibeli untuk ${phoneNumber}`);
+
+                } catch (error) {
+                    console.error('Pulsa purchase error:', error);
+                    Utils.showToast(error.message || 'Pembelian pulsa/data gagal', 'error');
+                } finally {
+                    buyBtn.disabled = false;
+                    buyBtn.innerHTML = '📞 Beli Pulsa/Data';
+                }
+            }
+
+            showSuccessModal(title, message, token = null) {
+                document.getElementById('successTitle').textContent = title;
+                document.getElementById('successMessage').textContent = message;
+
+                const tokenDisplay = document.getElementById('tokenDisplay');
+                if (token) {
+                    this.currentToken = token;
+                    document.getElementById('tokenNumber').textContent = token;
+                    tokenDisplay.style.display = 'block';
+                } else {
+                    tokenDisplay.style.display = 'none';
+                }
+
+                document.getElementById('successModal').classList.add('show');
+                
+                // Reset form
+                this.resetSelections();
+            }
+
+            resetSelections() {
+                this.selectedAmount = 0;
+                this.selectedType = '';
+                this.selectedOperator = '';
+
+                // Clear form inputs
+                document.getElementById('meterNumber').value = '';
+                document.getElementById('phoneNumber').value = '';
+
+                // Clear selections
+                document.querySelectorAll('.amount-btn, .data-package-btn, .operator-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+
+                // Update displays
+                this.updateElectricityDisplay();
+                this.updatePulsaDisplay();
+
+                // Validate forms
+                this.validateElectricity();
+                this.validatePulsa();
+            }
+        }
+
+        function hideSuccessModal() {
+            document.getElementById('successModal').classList.remove('show');
+        }
+
+        function copyToken() {
+            if (pembelianPage.currentToken) {
+                Utils.copyToClipboard(pembelianPage.currentToken);
+            }
+        }
+
+        // Initialize page
+        let pembelianPage;
+        document.addEventListener('DOMContentLoaded', () => {
+            pembelianPage = new PembelianPage();
+        });
+    </script>
+
+    <style>
+        .operator-btn {
+            padding: 1rem;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .operator-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(213, 0, 0, 0.05);
+        }
+
+        .operator-btn.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .data-package-btn {
+            padding: 1rem;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            width: 100%;
+        }
+
+        .data-package-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(213, 0, 0, 0.05);
+        }
+
+        .data-package-btn.selected {
+            border-color: var(--primary-color);
+            background: rgba(213, 0, 0, 0.1);
+        }
+
+        .product-content {
+            display: none;
+        }
+
+        .product-content.active {
+            display: block;
+        }
+    </style>
+</body>
+</html>

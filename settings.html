@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="window.location.href='main.html'" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; cursor: pointer;">
+                        ←
+                    </button>
+                    <div>
+                        <div class="greeting">Pengaturan</div>
+                        <div class="user-name">Kelola akun dan keamanan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Profile Section -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Profil Saya</h3>
+                
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="width: 64px; height: 64px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
+                        👤
+                    </div>
+                    <div>
+                        <div style="font-weight: 500; font-size: 1.25rem;" id="profileName">Loading...</div>
+                        <div style="color: var(--text-secondary);" id="profileEmail">Loading...</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editName">Nama Lengkap</label>
+                    <input type="text" id="editName" class="form-input" placeholder="Nama lengkap">
+                    <div class="form-error" id="nameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPhone">Nomor HP</label>
+                    <input type="tel" id="editPhone" class="form-input" placeholder="+6281234567890">
+                    <div class="form-error" id="phoneError"></div>
+                </div>
+
+                <button class="btn btn-primary btn-full" id="updateProfileBtn">
+                    💾 Simpan Perubahan
+                </button>
+            </div>
+
+            <!-- Security Section -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Keamanan Akun</h3>
+                
+                <div class="feature-item" onclick="showChangePasswordModal()" style="margin-bottom: 1rem; cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--warning-color);">🔒</div>
+                    <div>
+                        <div class="feature-title">Ubah Password</div>
+                        <div class="feature-desc">Ganti password untuk keamanan akun</div>
+                    </div>
+                </div>
+
+                <div class="feature-item" onclick="show2FAModal()" style="margin-bottom: 1rem; cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--success-color);">🛡️</div>
+                    <div>
+                        <div class="feature-title">Two-Factor Authentication</div>
+                        <div class="feature-desc">Aktifkan 2FA untuk keamanan ekstra</div>
+                    </div>
+                </div>
+
+                <div class="feature-item" onclick="showDevicesModal()" style="cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--secondary-color);">📱</div>
+                    <div>
+                        <div class="feature-title">Perangkat Terhubung</div>
+                        <div class="feature-desc">Kelola sesi login aktif</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Settings -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Pengaturan Aplikasi</h3>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-weight: 500;">Notifikasi Push</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Terima notifikasi transaksi</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notificationToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-weight: 500;">Biometrik</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Login dengan sidik jari</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="biometricToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500;">Mode Gelap</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Tema gelap untuk mata</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Help & Support -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Bantuan & Dukungan</h3>
+                
+                <div class="feature-item" onclick="showHelpModal()" style="margin-bottom: 1rem; cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--secondary-color);">❓</div>
+                    <div>
+                        <div class="feature-title">Pusat Bantuan</div>
+                        <div class="feature-desc">FAQ dan panduan penggunaan</div>
+                    </div>
+                </div>
+
+                <div class="feature-item" onclick="Utils.showToast('Fitur hubungi support segera hadir!', 'info')" style="margin-bottom: 1rem; cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--success-color);">💬</div>
+                    <div>
+                        <div class="feature-title">Hubungi Support</div>
+                        <div class="feature-desc">Chat dengan tim customer service</div>
+                    </div>
+                </div>
+
+                <div class="feature-item" onclick="showAboutModal()" style="cursor: pointer;">
+                    <div class="feature-icon" style="background: var(--primary-color);">ℹ️</div>
+                    <div>
+                        <div class="feature-title">Tentang BayarAja</div>
+                        <div class="feature-desc">Versi aplikasi dan informasi</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logout -->
+            <div class="card">
+                <button class="btn btn-secondary btn-full" onclick="confirmLogout()" style="color: var(--error-color); border-color: var(--error-color);">
+                    🚪 Keluar dari Akun
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ubah Password</h3>
+                <button class="modal-close" onclick="hidePasswordModal()">&times;</button>
+            </div>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label class="form-label" for="currentPassword">Password Saat Ini</label>
+                    <input type="password" id="currentPassword" class="form-input" placeholder="Masukkan password saat ini" required>
+                    <div class="form-error" id="currentPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="newPassword">Password Baru</label>
+                    <input type="password" id="newPassword" class="form-input" placeholder="Masukkan password baru" required>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="newPasswordStrengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="newPasswordStrengthText"></div>
+                    </div>
+                    <div class="form-error" id="newPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmNewPassword">Konfirmasi Password Baru</label>
+                    <input type="password" id="confirmNewPassword" class="form-input" placeholder="Ulangi password baru" required>
+                    <div class="form-error" id="confirmNewPasswordError"></div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="hidePasswordModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="changePasswordBtn">Ubah Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2FA Modal -->
+    <div class="modal" id="twoFAModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Two-Factor Authentication</h3>
+                <button class="modal-close" onclick="hide2FAModal()">&times;</button>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🛡️</div>
+                <h4>Aktifkan 2FA</h4>
+                <p style="margin: 1rem 0; color: var(--text-secondary);">
+                    Two-Factor Authentication menambah lapisan keamanan ekstra untuk akun Anda.
+                </p>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                    <div style="font-weight: 500; margin-bottom: 0.5rem;">Status: <span style="color: var(--warning-color);">Tidak Aktif</span></div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                        Fitur ini akan segera tersedia dalam update mendatang.
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="Utils.showToast('Fitur 2FA segera hadir!', 'info')">
+                    Aktifkan 2FA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Devices Modal -->
+    <div class="modal" id="devicesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Perangkat Terhubung</h3>
+                <button class="modal-close" onclick="hideDevicesModal()">&times;</button>
+            </div>
+            <div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 2px solid var(--success-color); border-radius: 8px; background: rgba(76, 175, 80, 0.1);">
+                        <div style="font-size: 2rem;">💻</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">Perangkat Saat Ini</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                Browser Web • Aktif sekarang
+                            </div>
+                        </div>
+                        <div style="color: var(--success-color); font-weight: 500;">Aktif</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 2px solid var(--border); border-radius: 8px;">
+                        <div style="font-size: 2rem;">📱</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">Mobile App</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                Android • Terakhir aktif 2 hari lalu
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            Putuskan
+                        </button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">
+                        Jika Anda melihat aktivitas yang mencurigakan, segera ubah password Anda.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Pusat Bantuan</h3>
+                <button class="modal-close" onclick="hideHelpModal()">&times;</button>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 1rem;">Pertanyaan yang Sering Diajukan</h4>
+                
+                <div class="faq-item" style="margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="faq-question" onclick="toggleFAQ(this)" style="padding: 1rem; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Bagaimana cara top up saldo?</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="faq-answer" style="padding: 0 1rem 1rem; display: none; color: var(--text-secondary);">
+                        Anda dapat top up saldo melalui menu "Top Up" di dashboard utama. Pilih nominal yang diinginkan dan bayar menggunakan QRIS.
+                    </div>
+                </div>
+
+                <div class="faq-item" style="margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="faq-question" onclick="toggleFAQ(this)" style="padding: 1rem; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Apakah transfer antar pengguna gratis?</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="faq-answer" style="padding: 0 1rem 1rem; display: none; color: var(--text-secondary);">
+                        Ya, transfer antar pengguna BayarAja sepenuhnya gratis tanpa biaya admin.
+                    </div>
+                </div>
+
+                <div class="faq-item" style="margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="faq-question" onclick="toggleFAQ(this)" style="padding: 1rem; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Bagaimana cara menggunakan QR code?</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="faq-answer" style="padding: 0 1rem 1rem; display: none; color: var(--text-secondary);">
+                        Gunakan menu "Scan QR" untuk memindai QR code pembayaran, atau tampilkan QR code Anda sendiri dari dashboard untuk menerima pembayaran.
+                    </div>
+                </div>
+
+                <div class="faq-item" style="border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="faq-question" onclick="toggleFAQ(this)" style="padding: 1rem; cursor: pointer; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Bagaimana jika lupa password?</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="faq-answer" style="padding: 0 1rem 1rem; display: none; color: var(--text-secondary);">
+                        Gunakan fitur "Lupa Password" di halaman login, atau hubungi customer service kami untuk bantuan reset password.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Tentang BayarAja</h3>
+                <button class="modal-close" onclick="hideAboutModal()">&times;</button>
+            </div>
+            <div style="text-align: center;">
+                <div style="margin-bottom: 1.5rem;">
+                    <img src="logo.svg" alt="BayarAja Logo" width="80" height="80">
+                </div>
+                <h4 style="margin-bottom: 0.5rem;">BayarAja</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Digital Wallet Modern</p>
+                
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Versi:</span>
+                        <span style="font-weight: 500;">1.0.0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Build:</span>
+                        <span style="font-weight: 500;">2024.01.15</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Platform:</span>
+                        <span style="font-weight: 500;">Web App</span>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    BayarAja adalah solusi digital wallet modern yang memudahkan transaksi keuangan Anda dengan aman dan cepat.
+                </p>
+
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                    © 2024 BayarAja. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script>
+        class SettingsPage {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    this.loadUserProfile();
+                    this.setupEventListeners();
+                    
+                } catch (error) {
+                    console.error('Settings page initialization error:', error);
+                    Utils.showToast('Gagal memuat halaman pengaturan', 'error');
+                }
+            }
+
+            loadUserProfile() {
+                const user = firebase.auth.currentUser;
+                const userData = bayarAjaApp.userData;
+
+                // Display profile info
+                document.getElementById('profileName').textContent = userData?.name || user.displayName || 'Pengguna';
+                document.getElementById('profileEmail').textContent = user.email || 'Email tidak tersedia';
+
+                // Fill edit form
+                document.getElementById('editName').value = userData?.name || user.displayName || '';
+                document.getElementById('editPhone').value = userData?.phone || '';
+            }
+
+            setupEventListeners() {
+                // Update profile
+                document.getElementById('updateProfileBtn').addEventListener('click', this.updateProfile.bind(this));
+
+                // Change password form
+                document.getElementById('changePasswordForm').addEventListener('submit', this.changePassword.bind(this));
+
+                // Password strength indicator
+                document.getElementById('newPassword').addEventListener('input', this.updatePasswordStrength.bind(this));
+
+                // Form validation
+                document.getElementById('editName').addEventListener('input', this.validateProfile.bind(this));
+                document.getElementById('editPhone').addEventListener('input', this.validateProfile.bind(this));
+
+                // Settings toggles
+                document.getElementById('notificationToggle').addEventListener('change', this.toggleNotifications.bind(this));
+                document.getElementById('biometricToggle').addEventListener('change', this.toggleBiometric.bind(this));
+                document.getElementById('darkModeToggle').addEventListener('change', this.toggleDarkMode.bind(this));
+            }
+
+            validateProfile() {
+                const name = document.getElementById('editName').value.trim();
+                const phone = document.getElementById('editPhone').value.trim();
+                const nameError = document.getElementById('nameError');
+                const phoneError = document.getElementById('phoneError');
+                const updateBtn = document.getElementById('updateProfileBtn');
+
+                let isValid = true;
+
+                // Validate name
+                if (name.length < 2) {
+                    nameError.textContent = 'Nama minimal 2 karakter';
+                    isValid = false;
+                } else {
+                    nameError.textContent = '';
+                }
+
+                // Validate phone
+                if (phone && !Utils.isValidPhone(phone)) {
+                    phoneError.textContent = 'Format nomor HP tidak valid';
+                    isValid = false;
+                } else {
+                    phoneError.textContent = '';
+                }
+
+                updateBtn.disabled = !isValid;
+            }
+
+            async updateProfile() {
+                const name = document.getElementById('editName').value.trim();
+                const phone = document.getElementById('editPhone').value.trim();
+                const updateBtn = document.getElementById('updateProfileBtn');
+
+                try {
+                    updateBtn.disabled = true;
+                    updateBtn.innerHTML = '<div class="spinner"></div><span>Menyimpan...</span>';
+
+                    const user = firebase.auth.currentUser;
+                    const userRef = firebase.doc(firebase.db, 'users', user.uid);
+
+                    await firebase.setDoc(userRef, {
+                        name: name,
+                        phone: phone,
+                        updatedAt: firebase.serverTimestamp()
+                    }, { merge: true });
+
+                    // Update local data
+                    bayarAjaApp.userData = { ...bayarAjaApp.userData, name, phone };
+
+                    // Update display
+                    document.getElementById('profileName').textContent = name;
+
+                    Utils.showToast('Profil berhasil diperbarui', 'success');
+
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    Utils.showToast('Gagal memperbarui profil', 'error');
+                } finally {
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = '💾 Simpan Perubahan';
+                }
+            }
+
+            updatePasswordStrength() {
+                const password = document.getElementById('newPassword').value;
+                const strengthFill = document.getElementById('newPasswordStrengthFill');
+                const strengthText = document.getElementById('newPasswordStrengthText');
+
+                if (!password) {
+                    strengthFill.className = 'strength-fill';
+                    strengthText.textContent = '';
+                    return;
+                }
+
+                const strength = authManager.getPasswordStrength(password);
+                const strengthLevels = [
+                    { class: 'strength-weak', text: 'Lemah' },
+                    { class: 'strength-weak', text: 'Lemah' },
+                    { class: 'strength-fair', text: 'Cukup' },
+                    { class: 'strength-good', text: 'Baik' },
+                    { class: 'strength-strong', text: 'Kuat' }
+                ];
+
+                const level = strengthLevels[strength] || strengthLevels[0];
+                strengthFill.className = `strength-fill ${level.class}`;
+                strengthText.textContent = level.text;
+            }
+
+            async changePassword(e) {
+                e.preventDefault();
+
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmNewPassword').value;
+                const changeBtn = document.getElementById('changePasswordBtn');
+
+                // Validate passwords
+                if (!authManager.isPasswordStrong(newPassword)) {
+                    document.getElementById('newPasswordError').textContent = 'Password harus minimal 8 karakter dengan huruf besar, kecil, dan angka';
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    document.getElementById('confirmNewPasswordError').textContent = 'Konfirmasi password tidak cocok';
+                    return;
+                }
+
+                try {
+                    changeBtn.disabled = true;
+                    changeBtn.innerHTML = '<div class="spinner"></div><span>Mengubah...</span>';
+
+                    // Re-authenticate user
+                    const user = firebase.auth.currentUser;
+                    const credential = firebase.EmailAuthProvider.credential(user.email, currentPassword);
+                    await firebase.reauthenticateWithCredential(user, credential);
+
+                    // Update password
+                    await firebase.updatePassword(user, newPassword);
+
+                    Utils.showToast('Password berhasil diubah', 'success');
+                    hidePasswordModal();
+
+                    // Clear form
+                    document.getElementById('changePasswordForm').reset();
+
+                } catch (error) {
+                    console.error('Error changing password:', error);
+                    if (error.code === 'auth/wrong-password') {
+                        document.getElementById('currentPasswordError').textContent = 'Password saat ini salah';
+                    } else {
+                        Utils.showToast('Gagal mengubah password', 'error');
+                    }
+                } finally {
+                    changeBtn.disabled = false;
+                    changeBtn.innerHTML = 'Ubah Password';
+                }
+            }
+
+            toggleNotifications(e) {
+                const enabled = e.target.checked;
+                Utils.showToast(`Notifikasi ${enabled ? 'diaktifkan' : 'dinonaktifkan'}`, 'info');
+                // Here you would typically save this preference to the backend
+            }
+
+            toggleBiometric(e) {
+                const enabled = e.target.checked;
+                if (enabled) {
+                    Utils.showToast('Fitur biometrik segera hadir!', 'info');
+                    e.target.checked = false;
+                } else {
+                    Utils.showToast('Biometrik dinonaktifkan', 'info');
+                }
+            }
+
+            toggleDarkMode(e) {
+                const enabled = e.target.checked;
+                if (enabled) {
+                    Utils.showToast('Mode gelap segera hadir!', 'info');
+                    e.target.checked = false;
+                } else {
+                    Utils.showToast('Mode terang aktif', 'info');
+                }
+            }
+        }
+
+        // Modal functions
+        function showChangePasswordModal() {
+            document.getElementById('passwordModal').classList.add('show');
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('show');
+            document.getElementById('changePasswordForm').reset();
+            document.querySelectorAll('.form-error').forEach(error => error.textContent = '');
+        }
+
+        function show2FAModal() {
+            document.getElementById('twoFAModal').classList.add('show');
+        }
+
+        function hide2FAModal() {
+            document.getElementById('twoFAModal').classList.remove('show');
+        }
+
+        function showDevicesModal() {
+            document.getElementById('devicesModal').classList.add('show');
+        }
+
+        function hideDevicesModal() {
+            document.getElementById('devicesModal').classList.remove('show');
+        }
+
+        function showHelpModal() {
+            document.getElementById('helpModal').classList.add('show');
+        }
+
+        function hideHelpModal() {
+            document.getElementById('helpModal').classList.remove('show');
+        }
+
+        function showAboutModal() {
+            document.getElementById('aboutModal').classList.add('show');
+        }
+
+        function hideAboutModal() {
+            document.getElementById('aboutModal').classList.remove('show');
+        }
+
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const arrow = element.querySelector('span:last-child');
+            
+            if (answer.style.display === 'none' || !answer.style.display) {
+                answer.style.display = 'block';
+                arrow.textContent = '▲';
+            } else {
+                answer.style.display = 'none';
+                arrow.textContent = '▼';
+            }
+        }
+
+        function confirmLogout() {
+            if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+                authManager.logout();
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            new SettingsPage();
+        });
+    </script>
+
+    <style>
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* FAQ Styles */
+        .faq-question:hover {
+            background-color: rgba(213, 0, 0, 0.05);
+        }
+    </style>
+</body>
+</html>

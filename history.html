@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Transaksi - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="window.location.href='main.html'" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; cursor: pointer;">
+                        ←
+                    </button>
+                    <div>
+                        <div class="greeting">Riwayat Transaksi</div>
+                        <div class="user-name">Semua aktivitas keuangan Anda</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Filter and Search -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" data-filter="all">Semua</button>
+                    <button class="tab" data-filter="TRANSFER_IN,TRANSFER_OUT">Transfer</button>
+                    <button class="tab" data-filter="TOP_UP">Top Up</button>
+                    <button class="tab" data-filter="PURCHASE">Pembelian</button>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="searchInput" class="form-input" placeholder="Cari transaksi...">
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="startDate">Dari Tanggal</label>
+                        <input type="date" id="startDate" class="form-input">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="endDate">Sampai Tanggal</label>
+                        <input type="date" id="endDate" class="form-input">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="clearFilters()">🗑️ Reset Filter</button>
+                    <button class="btn btn-primary" style="flex: 1;" onclick="exportToCSV()">📊 Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Transaction Summary -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div class="card" style="text-align: center;">
+                    <div style="color: var(--success-color); font-size: 1.5rem; font-weight: bold;" id="totalIncome">Rp 0</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Masuk</div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="color: var(--error-color); font-size: 1.5rem; font-weight: bold;" id="totalExpense">Rp 0</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Keluar</div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="color: var(--primary-color); font-size: 1.5rem; font-weight: bold;" id="totalTransactions">0</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Transaksi</div>
+                </div>
+            </div>
+
+            <!-- Transaction List -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Daftar Transaksi</h3>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);" id="transactionCount">0 transaksi</div>
+                </div>
+                
+                <div id="transactionList">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+
+                <!-- Load More Button -->
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-secondary" id="loadMoreBtn" style="display: none;">Muat Lebih Banyak</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Detail Modal -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Detail Transaksi</h3>
+                <button class="modal-close" onclick="hideDetailModal()">&times;</button>
+            </div>
+            <div id="transactionDetail">
+                <!-- Detail content will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script>
+        class HistoryPage {
+            constructor() {
+                this.allTransactions = [];
+                this.filteredTransactions = [];
+                this.currentFilter = 'all';
+                this.displayedCount = 0;
+                this.pageSize = 20;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    this.setupEventListeners();
+                    await this.loadTransactions();
+                    
+                } catch (error) {
+                    console.error('History page initialization error:', error);
+                    Utils.showToast('Gagal memuat riwayat transaksi', 'error');
+                }
+            }
+
+            setupEventListeners() {
+                // Tab filters
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.currentFilter = tab.dataset.filter;
+                        this.applyFilters();
+                    });
+                });
+
+                // Search input
+                document.getElementById('searchInput').addEventListener('input', 
+                    Utils.debounce(() => this.applyFilters(), 300)
+                );
+
+                // Date filters
+                document.getElementById('startDate').addEventListener('change', () => this.applyFilters());
+                document.getElementById('endDate').addEventListener('change', () => this.applyFilters());
+
+                // Load more button
+                document.getElementById('loadMoreBtn').addEventListener('click', () => this.loadMoreTransactions());
+            }
+
+            async loadTransactions() {
+                try {
+                    this.allTransactions = await bayarAjaApp.getTransactions(1000); // Load more for better filtering
+                    this.applyFilters();
+                } catch (error) {
+                    console.error('Error loading transactions:', error);
+                    document.getElementById('transactionList').innerHTML = 
+                        '<p style="text-align: center; color: var(--text-secondary);">Gagal memuat transaksi</p>';
+                }
+            }
+
+            applyFilters() {
+                let filtered = [...this.allTransactions];
+
+                // Filter by type
+                if (this.currentFilter !== 'all') {
+                    const types = this.currentFilter.split(',');
+                    filtered = filtered.filter(t => types.includes(t.type));
+                }
+
+                // Filter by search
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+                if (searchTerm) {
+                    filtered = filtered.filter(t => {
+                        const searchableText = [
+                            t.recipientName,
+                            t.senderName,
+                            t.transactionId,
+                            t.note,
+                            t.details?.meterNumber,
+                            t.details?.phoneNumber
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        
+                        return searchableText.includes(searchTerm);
+                    });
+                }
+
+                // Filter by date range
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (startDate || endDate) {
+                    filtered = filtered.filter(t => {
+                        if (!t.createdAt) return false;
+                        
+                        const transactionDate = t.createdAt.toDate ? t.createdAt.toDate() : new Date(t.createdAt);
+                        const transactionDateStr = transactionDate.toISOString().split('T')[0];
+                        
+                        if (startDate && transactionDateStr < startDate) return false;
+                        if (endDate && transactionDateStr > endDate) return false;
+                        
+                        return true;
+                    });
+                }
+
+                this.filteredTransactions = filtered;
+                this.displayedCount = 0;
+                this.updateSummary();
+                this.loadMoreTransactions();
+            }
+
+            updateSummary() {
+                let totalIncome = 0;
+                let totalExpense = 0;
+
+                this.filteredTransactions.forEach(transaction => {
+                    if (['TRANSFER_IN', 'TOP_UP'].includes(transaction.type)) {
+                        totalIncome += transaction.amount || 0;
+                    } else {
+                        totalExpense += transaction.amount || 0;
+                    }
+                });
+
+                document.getElementById('totalIncome').textContent = Utils.formatCurrency(totalIncome);
+                document.getElementById('totalExpense').textContent = Utils.formatCurrency(totalExpense);
+                document.getElementById('totalTransactions').textContent = this.filteredTransactions.length;
+            }
+
+            loadMoreTransactions() {
+                const container = document.getElementById('transactionList');
+                const loadMoreBtn = document.getElementById('loadMoreBtn');
+                const countElement = document.getElementById('transactionCount');
+
+                const startIndex = this.displayedCount;
+                const endIndex = Math.min(startIndex + this.pageSize, this.filteredTransactions.length);
+                const transactionsToShow = this.filteredTransactions.slice(startIndex, endIndex);
+
+                if (startIndex === 0) {
+                    container.innerHTML = '';
+                }
+
+                if (transactionsToShow.length === 0 && startIndex === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Tidak ada transaksi ditemukan</p>';
+                    loadMoreBtn.style.display = 'none';
+                    countElement.textContent = '0 transaksi';
+                    return;
+                }
+
+                const transactionHTML = transactionsToShow.map(transaction => {
+                    const isIncome = ['TRANSFER_IN', 'TOP_UP'].includes(transaction.type);
+                    const iconClass = this.getTransactionIcon(transaction.type);
+                    const amount = isIncome ? `+${Utils.formatCurrency(transaction.amount)}` : `-${Utils.formatCurrency(transaction.amount)}`;
+                    const amountClass = isIncome ? 'positive' : 'negative';
+                    
+                    return `
+                        <div class="transaction-item" onclick="showTransactionDetail('${transaction.id}')">
+                            <div class="transaction-icon ${iconClass}">
+                                ${this.getTransactionEmoji(transaction.type)}
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">${this.getTransactionTitle(transaction)}</div>
+                                <div class="transaction-desc">${this.getTransactionDesc(transaction)}</div>
+                            </div>
+                            <div class="transaction-amount ${amountClass}">${amount}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.insertAdjacentHTML('beforeend', transactionHTML);
+
+                this.displayedCount = endIndex;
+                countElement.textContent = `${this.displayedCount} dari ${this.filteredTransactions.length} transaksi`;
+
+                // Show/hide load more button
+                loadMoreBtn.style.display = endIndex < this.filteredTransactions.length ? 'block' : 'none';
+            }
+
+            getTransactionIcon(type) {
+                const iconMap = {
+                    'TRANSFER_IN': 'income',
+                    'TRANSFER_OUT': 'expense',
+                    'TOP_UP': 'topup',
+                    'PURCHASE': 'expense'
+                };
+                return iconMap[type] || 'expense';
+            }
+
+            getTransactionEmoji(type) {
+                const emojiMap = {
+                    'TRANSFER_IN': '📥',
+                    'TRANSFER_OUT': '📤',
+                    'TOP_UP': '💳',
+                    'PURCHASE': '🛒'
+                };
+                return emojiMap[type] || '💰';
+            }
+
+            getTransactionTitle(transaction) {
+                switch (transaction.type) {
+                    case 'TRANSFER_IN':
+                        return `Transfer dari ${transaction.senderName}`;
+                    case 'TRANSFER_OUT':
+                        return `Transfer ke ${transaction.recipientName}`;
+                    case 'TOP_UP':
+                        return 'Top Up Saldo';
+                    case 'PURCHASE':
+                        return `Pembelian ${transaction.subType || 'Digital'}`;
+                    default:
+                        return 'Transaksi';
+                }
+            }
+
+            getTransactionDesc(transaction) {
+                let desc = '';
+                
+                if (transaction.createdAt) {
+                    const date = transaction.createdAt.toDate ? transaction.createdAt.toDate() : new Date(transaction.createdAt);
+                    desc = Utils.formatDate(date);
+                }
+                
+                if (transaction.transactionId) {
+                    desc += ` • ${transaction.transactionId}`;
+                }
+                
+                return desc || 'Baru saja';
+            }
+
+            findTransactionById(id) {
+                return this.allTransactions.find(t => t.id === id);
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            
+            // Reset to "Semua" tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.tab[data-filter="all"]').classList.add('active');
+            
+            historyPage.currentFilter = 'all';
+            historyPage.applyFilters();
+        }
+
+        function showTransactionDetail(transactionId) {
+            const transaction = historyPage.findTransactionById(transactionId);
+            if (!transaction) return;
+
+            const modal = document.getElementById('detailModal');
+            const detailContainer = document.getElementById('transactionDetail');
+
+            const isIncome = ['TRANSFER_IN', 'TOP_UP'].includes(transaction.type);
+            const amount = isIncome ? `+${Utils.formatCurrency(transaction.amount)}` : `-${Utils.formatCurrency(transaction.amount)}`;
+            const amountClass = isIncome ? 'positive' : 'negative';
+            const date = transaction.createdAt ? 
+                (transaction.createdAt.toDate ? transaction.createdAt.toDate() : new Date(transaction.createdAt)) : 
+                new Date();
+
+            let detailHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">
+                        ${historyPage.getTransactionEmoji(transaction.type)}
+                    </div>
+                    <h4>${historyPage.getTransactionTitle(transaction)}</h4>
+                    <div style="font-size: 2rem; font-weight: bold; margin-top: 1rem;" class="transaction-amount ${amountClass}">
+                        ${amount}
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>ID Transaksi:</span>
+                        <span style="font-weight: 500;">${transaction.transactionId || transaction.id}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Tanggal:</span>
+                        <span>${Utils.formatDate(date)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Status:</span>
+                        <span style="color: var(--success-color); font-weight: 500;">${transaction.status || 'SUCCESS'}</span>
+                    </div>
+            `;
+
+            // Add specific details based on transaction type
+            if (transaction.type === 'TRANSFER_IN') {
+                detailHTML += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Pengirim:</span>
+                        <span>${transaction.senderName}</span>
+                    </div>
+                `;
+            } else if (transaction.type === 'TRANSFER_OUT') {
+                detailHTML += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Penerima:</span>
+                        <span>${transaction.recipientName}</span>
+                    </div>
+                `;
+            } else if (transaction.type === 'PURCHASE') {
+                if (transaction.details) {
+                    if (transaction.details.meterNumber) {
+                        detailHTML += `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>No. Meter:</span>
+                                <span>${transaction.details.meterNumber}</span>
+                            </div>
+                        `;
+                    }
+                    if (transaction.details.phoneNumber) {
+                        detailHTML += `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>No. HP:</span>
+                                <span>${transaction.details.phoneNumber}</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            if (transaction.note) {
+                detailHTML += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Catatan:</span>
+                        <span style="font-style: italic;">${transaction.note}</span>
+                    </div>
+                `;
+            }
+
+            detailHTML += '</div>';
+
+            detailContainer.innerHTML = detailHTML;
+            modal.classList.add('show');
+        }
+
+        function hideDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        function exportToCSV() {
+            if (historyPage.filteredTransactions.length === 0) {
+                Utils.showToast('Tidak ada data untuk diekspor', 'warning');
+                return;
+            }
+
+            const headers = ['Tanggal', 'Jenis', 'Deskripsi', 'Nominal', 'Status', 'ID Transaksi'];
+            const csvData = [headers];
+
+            historyPage.filteredTransactions.forEach(transaction => {
+                const date = transaction.createdAt ? 
+                    (transaction.createdAt.toDate ? transaction.createdAt.toDate() : new Date(transaction.createdAt)) : 
+                    new Date();
+                
+                const isIncome = ['TRANSFER_IN', 'TOP_UP'].includes(transaction.type);
+                const amount = isIncome ? transaction.amount : -transaction.amount;
+                
+                csvData.push([
+                    Utils.formatDate(date),
+                    transaction.type,
+                    historyPage.getTransactionTitle(transaction),
+                    amount,
+                    transaction.status || 'SUCCESS',
+                    transaction.transactionId || transaction.id
+                ]);
+            });
+
+            const csvContent = csvData.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `BayarAja_Transaksi_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                Utils.showToast('File CSV berhasil diunduh', 'success');
+            }
+        }
+
+        // Initialize page
+        let historyPage;
+        document.addEventListener('DOMContentLoaded', () => {
+            historyPage = new HistoryPage();
+        });
+    </script>
+</body>
+</html>

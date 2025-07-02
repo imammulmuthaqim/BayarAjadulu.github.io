@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer - BayarAja</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button onclick="window.location.href='main.html'" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; cursor: pointer;">
+                        ←
+                    </button>
+                    <div>
+                        <div class="greeting">Transfer Uang</div>
+                        <div class="user-name">Kirim uang ke sesama pengguna BayarAja</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Current Balance -->
+            <div class="card balance-card">
+                <div class="balance-label">Saldo Anda</div>
+                <div class="balance-amount" id="currentBalance">Rp 0</div>
+            </div>
+
+            <!-- Transfer Form -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Detail Transfer</h3>
+                
+                <!-- Recipient -->
+                <div class="form-group">
+                    <label class="form-label" for="recipientInput">Penerima (Email atau UID)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="recipientInput" class="form-input" placeholder="Masukkan email atau UID penerima" style="flex: 1;">
+                        <button class="btn btn-secondary" id="checkRecipientBtn">Cek</button>
+                    </div>
+                    <div class="form-error" id="recipientError"></div>
+                </div>
+
+                <!-- Recipient Info -->
+                <div id="recipientInfo" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 48px; height: 48px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            👤
+                        </div>
+                        <div>
+                            <div style="font-weight: 500;" id="recipientName">-</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);" id="recipientEmail">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amount -->
+                <div class="form-group">
+                    <label class="form-label" for="transferAmount">Nominal Transfer</label>
+                    <input type="number" id="transferAmount" class="form-input" placeholder="Masukkan nominal" min="1000" max="10000000">
+                    <div class="form-error" id="amountError"></div>
+                </div>
+
+                <!-- Note -->
+                <div class="form-group">
+                    <label class="form-label" for="transferNote">Catatan (Opsional)</label>
+                    <input type="text" id="transferNote" class="form-input" placeholder="Tambahkan catatan" maxlength="100">
+                </div>
+
+                <button class="btn btn-primary btn-full" id="transferBtn" disabled>
+                    💸 Transfer Sekarang
+                </button>
+            </div>
+
+            <!-- Quick Transfer (Recent Recipients) -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">Transfer Cepat</h3>
+                <div id="recentRecipients">
+                    <p style="text-align: center; color: var(--text-secondary);">Belum ada riwayat transfer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Konfirmasi Transfer</h3>
+                <button class="modal-close" onclick="hideConfirmModal()">&times;</button>
+            </div>
+            <div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Penerima:</span>
+                        <span id="confirmRecipientName" style="font-weight: 500;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Nominal:</span>
+                        <span id="confirmAmount" style="font-weight: 500; color: var(--primary-color);">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Biaya Admin:</span>
+                        <span style="color: var(--success-color);">GRATIS</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span>Catatan:</span>
+                        <span id="confirmNote" style="font-style: italic;">-</span>
+                    </div>
+                    <hr>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 1rem;">
+                        <span>Total Transfer:</span>
+                        <span id="confirmTotal" style="color: var(--primary-color);">-</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="hideConfirmModal()">Batal</button>
+                    <button class="btn btn-primary" style="flex: 1;" id="confirmTransferBtn">Konfirmasi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="utils.js"></script>
+    <script>
+        class TransferPage {
+            constructor() {
+                this.recipientData = null;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Auth guard
+                    await authManager.requireAuth();
+                    
+                    // Initialize app
+                    await bayarAjaApp.init();
+                    
+                    this.setupEventListeners();
+                    this.updateBalance();
+                    this.loadRecentRecipients();
+                    
+                } catch (error) {
+                    console.error('Transfer page initialization error:', error);
+                    Utils.showToast('Gagal memuat halaman transfer', 'error');
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('checkRecipientBtn').addEventListener('click', this.checkRecipient.bind(this));
+                document.getElementById('recipientInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.checkRecipient();
+                    }
+                });
+                
+                document.getElementById('transferAmount').addEventListener('input', this.validateForm.bind(this));
+                document.getElementById('transferBtn').addEventListener('click', this.showConfirmation.bind(this));
+                document.getElementById('confirmTransferBtn').addEventListener('click', this.processTransfer.bind(this));
+            }
+
+            updateBalance() {
+                const currentBalance = bayarAjaApp.userWallet?.balance || 0;
+                document.getElementById('currentBalance').textContent = Utils.formatCurrency(currentBalance);
+            }
+
+            async checkRecipient() {
+                const input = document.getElementById('recipientInput').value.trim();
+                const checkBtn = document.getElementById('checkRecipientBtn');
+                const errorElement = document.getElementById('recipientError');
+                const infoElement = document.getElementById('recipientInfo');
+
+                if (!input) {
+                    errorElement.textContent = 'Masukkan email atau UID penerima';
+                    return;
+                }
+
+                try {
+                    checkBtn.disabled = true;
+                    checkBtn.textContent = 'Mencari...';
+
+                    const recipient = await bayarAjaApp.findUser(input);
+                    
+                    if (!recipient) {
+                        errorElement.textContent = 'Penerima tidak ditemukan';
+                        infoElement.style.display = 'none';
+                        this.recipientData = null;
+                    } else if (recipient.uid === firebase.auth.currentUser.uid) {
+                        errorElement.textContent = 'Tidak dapat transfer ke diri sendiri';
+                        infoElement.style.display = 'none';
+                        this.recipientData = null;
+                    } else {
+                        errorElement.textContent = '';
+                        this.recipientData = recipient;
+                        
+                        // Show recipient info
+                        document.getElementById('recipientName').textContent = recipient.name;
+                        document.getElementById('recipientEmail').textContent = recipient.email;
+                        infoElement.style.display = 'block';
+                        
+                        Utils.showToast('Penerima ditemukan!', 'success');
+                    }
+
+                } catch (error) {
+                    console.error('Error checking recipient:', error);
+                    errorElement.textContent = 'Gagal mencari penerima';
+                } finally {
+                    checkBtn.disabled = false;
+                    checkBtn.textContent = 'Cek';
+                    this.validateForm();
+                }
+            }
+
+            validateForm() {
+                const amount = parseInt(document.getElementById('transferAmount').value) || 0;
+                const transferBtn = document.getElementById('transferBtn');
+                const amountError = document.getElementById('amountError');
+                
+                let isValid = true;
+
+                // Check recipient
+                if (!this.recipientData) {
+                    isValid = false;
+                }
+
+                // Check amount
+                if (amount < 1000) {
+                    amountError.textContent = 'Minimal transfer Rp 1.000';
+                    isValid = false;
+                } else if (amount > 10000000) {
+                    amountError.textContent = 'Maksimal transfer Rp 10.000.000';
+                    isValid = false;
+                } else if (amount > (bayarAjaApp.userWallet?.balance || 0)) {
+                    amountError.textContent = 'Saldo tidak mencukupi';
+                    isValid = false;
+                } else {
+                    amountError.textContent = '';
+                }
+
+                transferBtn.disabled = !isValid;
+            }
+
+            showConfirmation() {
+                if (!this.recipientData) return;
+
+                const amount = parseInt(document.getElementById('transferAmount').value);
+                const note = document.getElementById('transferNote').value.trim() || 'Tidak ada catatan';
+
+                // Fill confirmation modal
+                document.getElementById('confirmRecipientName').textContent = this.recipientData.name;
+                document.getElementById('confirmAmount').textContent = Utils.formatCurrency(amount);
+                document.getElementById('confirmNote').textContent = note;
+                document.getElementById('confirmTotal').textContent = Utils.formatCurrency(amount);
+
+                // Show modal
+                document.getElementById('confirmModal').classList.add('show');
+            }
+
+            async processTransfer() {
+                const amount = parseInt(document.getElementById('transferAmount').value);
+                const note = document.getElementById('transferNote').value.trim();
+                const confirmBtn = document.getElementById('confirmTransferBtn');
+
+                try {
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+
+                    await bayarAjaApp.transferMoney(this.recipientData.uid, amount, note);
+                    
+                    hideConfirmModal();
+                    Utils.showToast(`Transfer berhasil ke ${this.recipientData.name}`, 'success');
+                    
+                    // Reset form
+                    this.resetForm();
+                    
+                    // Redirect to main page
+                    setTimeout(() => {
+                        window.location.href = 'main.html';
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Transfer error:', error);
+                    Utils.showToast(error.message || 'Transfer gagal', 'error');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = 'Konfirmasi';
+                }
+            }
+
+            resetForm() {
+                document.getElementById('recipientInput').value = '';
+                document.getElementById('transferAmount').value = '';
+                document.getElementById('transferNote').value = '';
+                document.getElementById('recipientInfo').style.display = 'none';
+                document.getElementById('recipientError').textContent = '';
+                document.getElementById('amountError').textContent = '';
+                this.recipientData = null;
+                this.validateForm();
+            }
+
+            async loadRecentRecipients() {
+                try {
+                    const transactions = await bayarAjaApp.getTransactions(50);
+                    const recentTransfers = transactions
+                        .filter(t => t.type === 'TRANSFER_OUT')
+                        .slice(0, 5);
+
+                    if (recentTransfers.length === 0) return;
+
+                    const container = document.getElementById('recentRecipients');
+                    const recipientsHTML = recentTransfers.map(transfer => `
+                        <div class="transaction-item" style="cursor: pointer;" onclick="selectRecipient('${transfer.recipientUid}', '${transfer.recipientName}')">
+                            <div class="transaction-icon expense">👤</div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">${transfer.recipientName}</div>
+                                <div class="transaction-desc">Transfer terakhir: ${Utils.formatCurrency(transfer.amount)}</div>
+                            </div>
+                            <div style="color: var(--primary-color); font-weight: 500;">Pilih</div>
+                        </div>
+                    `).join('');
+
+                    container.innerHTML = recipientsHTML;
+
+                } catch (error) {
+                    console.error('Error loading recent recipients:', error);
+                }
+            }
+        }
+
+        function hideConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        function selectRecipient(uid, name) {
+            document.getElementById('recipientInput').value = uid;
+            transferPage.checkRecipient();
+        }
+
+        // Initialize page
+        let transferPage;
+        document.addEventListener('DOMContentLoaded', () => {
+            transferPage = new TransferPage();
+        });
+    </script>
+</body>
+</html>
