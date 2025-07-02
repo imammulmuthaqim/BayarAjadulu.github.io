@@ -3,31 +3,17 @@ const cors = require('cors');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// Firebase Admin SDK
-const admin = require('firebase-admin');
-
-// Initialize Firebase Admin
-const serviceAccount = {
-  type: "service_account",
-  project_id: process.env.FIREBASE_PROJECT_ID,
-  private_key: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-};
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: process.env.FIREBASE_PROJECT_ID
-  });
-}
-
-const db = admin.firestore();
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
+
+// Simple health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'BayarAja server is running' });
+});
 
 // Midtrans Snap API endpoint
 app.post('/create-snap', async (req, res) => {
@@ -58,11 +44,14 @@ app.post('/create-snap', async (req, res) => {
       }
     };
 
-    // Create Snap token
-    const snapToken = await createSnapToken(parameter);
+    // For demo purposes, return a mock token
+    // In production, you would call Midtrans API here
+    const mockToken = `demo-token-${Date.now()}`;
+    
+    console.log(`Created mock Snap token for order ${orderId}: ${mockToken}`);
     
     res.json({ 
-      token: snapToken,
+      token: mockToken,
       orderId: orderId
     });
 
@@ -72,61 +61,22 @@ app.post('/create-snap', async (req, res) => {
   }
 });
 
-// Midtrans webhook callback
+// Midtrans webhook callback (demo version)
 app.post('/midtrans-callback', async (req, res) => {
   try {
     const { order_id, status_code, gross_amount, signature_key, transaction_status } = req.body;
     
-    // Validate signature
-    const expectedSignature = crypto
-      .createHash('sha512')
-      .update(`${order_id}${status_code}${gross_amount}${process.env.MIDTRANS_SERVER_KEY}`)
-      .digest('hex');
+    console.log('Received Midtrans callback:', {
+      order_id,
+      transaction_status,
+      gross_amount
+    });
 
-    if (expectedSignature !== signature_key) {
-      console.error('Invalid signature from Midtrans');
-      return res.status(403).send('Forbidden: Invalid signature');
-    }
-
-    // Process successful payment
+    // In production, validate signature here
+    // For demo, we'll just log and respond OK
+    
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      // Extract UID from order_id
-      const uidMatch = order_id.match(/TOPUP-(.+)-\d+/);
-      if (!uidMatch) {
-        return res.status(400).send('Invalid order ID format');
-      }
-      
-      const uid = uidMatch[1];
-      const amount = parseInt(gross_amount);
-
-      // Update user balance using Firestore transaction
-      await db.runTransaction(async (transaction) => {
-        const walletRef = db.collection('wallets').doc(uid);
-        const walletDoc = await transaction.get(walletRef);
-        
-        const currentBalance = walletDoc.exists ? walletDoc.data().balance || 0 : 0;
-        const newBalance = currentBalance + amount;
-        
-        // Update wallet balance
-        transaction.set(walletRef, { 
-          balance: newBalance,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        // Log transaction
-        const transactionRef = db.collection('transactions').doc();
-        transaction.set(transactionRef, {
-          uid: uid,
-          type: 'TOP_UP',
-          amount: amount,
-          orderId: order_id,
-          status: 'SUCCESS',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          description: `Top up via QRIS - ${order_id}`
-        });
-      });
-
-      console.log(`Successfully processed top-up for user ${uid}: Rp ${amount.toLocaleString('id-ID')}`);
+      console.log(`Payment successful for order ${order_id}: Rp ${parseInt(gross_amount).toLocaleString('id-ID')}`);
     }
 
     res.status(200).send('OK');
@@ -136,36 +86,16 @@ app.post('/midtrans-callback', async (req, res) => {
   }
 });
 
-// Helper function to create Snap token
+// Helper function to create Snap token (demo version)
 async function createSnapToken(parameter) {
-  const fetch = (await import('node-fetch')).default;
-  
-  const auth = Buffer.from(process.env.MIDTRANS_SERVER_KEY + ':').toString('base64');
-  const url = process.env.MIDTRANS_IS_PRODUCTION === 'true' 
-    ? 'https://app.midtrans.com/snap/v1/transactions'
-    : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${auth}`
-    },
-    body: JSON.stringify(parameter)
-  });
-
-  const result = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(`Midtrans API error: ${result.error_messages?.join(', ') || 'Unknown error'}`);
-  }
-
-  return result.token;
+  // In production, this would call Midtrans API
+  // For demo, return a mock token
+  return `demo-token-${Date.now()}`;
 }
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 BayarAja server running on port ${PORT}`);
   console.log(`📱 Frontend available at http://localhost:${PORT}`);
+  console.log(`💡 This is a demo version - Firebase Admin and Midtrans are mocked`);
 });
