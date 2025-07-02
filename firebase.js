@@ -9,13 +9,17 @@ import {
   signInWithPhoneNumber,
   RecaptchaVerifier,
   onAuthStateChanged,
-  signOut
+  signOut,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { 
   getFirestore,
   doc,
   setDoc,
   getDoc,
+  getDocs,
   collection,
   addDoc,
   query,
@@ -26,14 +30,14 @@ import {
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Firebase configuration
+// Firebase configuration - REAL CONFIG
 const firebaseConfig = {
-    apiKey: "AIzaSyBv31cJC19G5Aoa5LTgaeXRdpN84z5TKsY",
-    authDomain: "imammulmu322.firebaseapp.com",
-    projectId: "imammulmu322",
-    storageBucket: "imammulmu322.firebasestorage.app",
-    messagingSenderId: "1048023716189",
-    appId: "1:1048023716189:web:e467f867fdd91c4ed518b4"
+  apiKey: "AIzaSyBv31cJC19G5Aoa5LTgaeXRdpN84z5TKsY",
+  authDomain: "imammulmu322.firebaseapp.com",
+  projectId: "imammulmu322",
+  storageBucket: "imammulmu322.firebasestorage.app",
+  messagingSenderId: "1048023716189",
+  appId: "1:1048023716189:web:e467f867fdd91c4ed518b4"
 };
 
 // Initialize Firebase
@@ -56,9 +60,13 @@ window.firebase = {
   RecaptchaVerifier,
   onAuthStateChanged,
   signOut,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   doc,
   setDoc,
   getDoc,
+  getDocs,
   collection,
   addDoc,
   query,
@@ -69,4 +77,5 @@ window.firebase = {
   serverTimestamp
 };
 
-console.log('🔥 Firebase initialized successfully');
+console.log('🔥 Firebase initialized successfully with real config');
+console.log('📊 Project ID:', firebaseConfig.projectId);
